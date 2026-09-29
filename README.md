@@ -99,7 +99,6 @@ The file should become:
 data/Ebook-Agentic-AI.pdf
 ```
 
-You may also download the assignment PDF manually and place it at that path.
 
 ## 5. Build Pinecone index
 
@@ -268,9 +267,7 @@ What is the core definition of Agentic AI as outlined in the eBook?
 }
 ```
 
-The exact answer, retrieved chunks, and score depend on the evaluator's
-Pinecone index and OpenAI run. This is a representative output example, not a
-claim of a live end-to-end test.
+
 
 ### Out-of-scope groundedness test
 
