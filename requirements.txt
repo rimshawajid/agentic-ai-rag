@@ -1,0 +1,15 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+python-dotenv>=1.0,<2
+pydantic>=2.8,<3
+pydantic-settings>=2.4,<3
+openai>=1.50,<3
+pinecone>=5.0,<8
+langchain>=0.3,<2
+langchain-community>=0.3,<1
+langchain-openai>=0.2,<1
+langchain-text-splitters>=0.3,<1
+langgraph>=0.2,<1
+pypdf>=5.0,<7
+gdown>=5.2,<6
+requests>=2.32,<3
