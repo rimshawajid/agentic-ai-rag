@@ -192,58 +192,146 @@ agentic-ai-rag/
 Do not commit API keys. Do not redistribute the assignment PDF if its sharing terms prohibit that.
 
 
-## Example output / interface
 
-The application exposes a FastAPI interface. After starting the server, open:
+## Assignment-aligned API response
+
+The `/chat` endpoint returns the structure requested in the assignment:
+
+```json
+{
+  "query": "What is Agentic AI?",
+  "final_answer": "Answer grounded in the Agentic AI eBook.",
+  "retrieved_context_chunks": [
+    "Chunk 1 text from the PDF...",
+    "Chunk 2 text from the PDF..."
+  ],
+  "confidence_score": 0.92
+}
+```
+
+`confidence_score` is a retrieval/groundedness score, not a calibrated probability.
+
+## LangGraph workflow
+
+```text
+START
+  |
+  v
+Retrieve
+  |
+  v
+Generate grounded answer
+  |
+  v
+Groundedness check
+  |
+  v
+END
+```
+
+The retrieval node queries Pinecone for the most relevant eBook chunks. The
+generation node is explicitly restricted to the retrieved context. The
+groundedness node uses the LLM as a strict verifier and replaces an unsupported
+answer with the grounded refusal message.
+
+## Example interface
+
+After starting FastAPI, open:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-The Swagger UI allows the evaluator to call `POST /chat` and inspect the returned answer, retrieved eBook chunks, and relevance/confidence score.
+Swagger UI provides an interactive `POST /chat` endpoint.
 
 ![Representative FastAPI output](docs/representative-output.png)
 
 ### Representative successful query
 
-**Question**
+**Query**
 
 ```text
-What is Agentic AI according to the eBook?
+What is the core definition of Agentic AI as outlined in the eBook?
 ```
 
-**Representative response shape**
+**Response shape**
 
 ```json
 {
-  "answer": "Agentic AI refers to AI systems that can perceive and reason about their environment, make decisions, and take actions toward goals with a degree of autonomy.",
-  "retrieved_chunks": [
-    {
-      "text": "...relevant excerpt from the Agentic AI eBook...",
-      "score": 0.82
-    },
-    {
-      "text": "...another supporting excerpt...",
-      "score": 0.76
-    }
+  "query": "What is the core definition of Agentic AI as outlined in the eBook?",
+  "final_answer": "...grounded answer from the Agentic AI eBook...",
+  "retrieved_context_chunks": [
+    "...relevant excerpt from the eBook...",
+    "...supporting excerpt from the eBook..."
   ],
   "confidence_score": 0.82
 }
 ```
 
-The exact answer text and scores depend on the indexed eBook content and the evaluator's Pinecone/OpenAI run. The example above is **representative output, not a claim of a live end-to-end test**, because the development environment currently has no OpenAI API credits.
+The exact answer, retrieved chunks, and score depend on the evaluator's
+Pinecone index and OpenAI run. This is a representative output example, not a
+claim of a live end-to-end test.
 
-### Out-of-scope example
+### Out-of-scope groundedness test
 
 ```text
-Question: Who won the 2022 FIFA World Cup?
-
-Expected behavior:
-"I don't have enough information in the Agentic AI eBook to answer that question."
+Query: What is the capital of France?
 ```
 
-This demonstrates the grounding requirement: the chatbot should refuse when the answer is not supported by the retrieved eBook context.
+Expected behavior:
 
-### Important for evaluators
+```text
+I don't have enough information in the Agentic AI eBook to answer that question.
+```
 
-The repository does not contain API keys. The evaluator should create a `.env` file from `.env.example`, add their own OpenAI and Pinecone credentials, run ingestion, and then start FastAPI. No developer API credits are required from the repository author for the evaluator to run the project.
+This demonstrates that the chatbot is restricted to the supplied knowledge
+base rather than answering from general world knowledge.
+
+## Assignment benchmark queries
+
+The included `tests/test_queries.py` contains the six requested validation
+queries:
+
+1. Definition & Scope
+2. Architecture & Paradigms
+3. Use Cases
+4. Comparison with traditional generative AI chatbots
+5. Challenges & Considerations
+6. Out-of-scope capital-of-France test
+
+## Evaluator setup
+
+1. Clone the repository.
+2. Create a Python virtual environment.
+3. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+4. Copy `.env.example` to `.env`.
+5. Add the evaluator's own `OPENAI_API_KEY` and `PINECONE_API_KEY`.
+6. Download the Agentic AI eBook:
+
+```bash
+python scripts/download_pdf.py
+```
+
+7. Build the Pinecone vector index:
+
+```bash
+python -m src.ingestion
+```
+
+8. Start the API:
+
+```bash
+uvicorn app:app --reload
+```
+
+9. Open `http://127.0.0.1:8000/docs` and test `/chat`.
+
+No API keys are stored in this repository. The developer environment used for
+preparation did not have sufficient OpenAI API credits for a live ingestion run,
+so the README labels the displayed response as representative rather than
+claiming an unverified live result.
